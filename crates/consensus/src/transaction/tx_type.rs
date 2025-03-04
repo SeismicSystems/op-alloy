@@ -38,6 +38,9 @@ pub enum OpTxType {
     /// Optimism Deposit transaction type.
     #[display("deposit")]
     Deposit = 126,
+    /// Seismic transaction type.
+    #[display("seismic")]
+    Seismic = 74,
 }
 
 impl OpTxType {

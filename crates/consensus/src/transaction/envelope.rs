@@ -1,6 +1,6 @@
 use alloy_consensus::{
     transaction::RlpEcdsaTx, Sealable, Sealed, Signed, Transaction, TxEip1559, TxEip2930,
-    TxEip7702, TxLegacy, Typed2718,
+    TxEip7702, TxLegacy, TxSeismic, Typed2718,
 };
 use alloy_eips::{
     eip2718::{Decodable2718, Eip2718Error, Eip2718Result, Encodable2718},
@@ -42,6 +42,8 @@ pub enum OpTxEnvelope {
     Eip7702(Signed<TxEip7702>),
     /// A [`TxDeposit`] tagged with type 0x7E.
     Deposit(Sealed<TxDeposit>),
+    /// A [`TxSeismic`] tagged with type 0x4A.
+    Seismic(Signed<TxSeismic>),
 }
 
 impl From<Signed<TxLegacy>> for OpTxEnvelope {
@@ -68,6 +70,12 @@ impl From<Signed<TxEip7702>> for OpTxEnvelope {
     }
 }
 
+impl From<Signed<TxSeismic>> for OpTxEnvelope {
+    fn from(v: Signed<TxSeismic>) -> Self {
+        Self::Seismic(v)
+    }
+}
+
 impl From<TxDeposit> for OpTxEnvelope {
     fn from(v: TxDeposit) -> Self {
         v.seal_slow().into()
@@ -87,6 +95,7 @@ impl Typed2718 for OpTxEnvelope {
             Self::Eip2930(tx) => tx.tx().ty(),
             Self::Eip1559(tx) => tx.tx().ty(),
             Self::Eip7702(tx) => tx.tx().ty(),
+            Self::Seismic(tx) => tx.tx().ty(),
             Self::Deposit(tx) => tx.ty(),
         }
     }
@@ -100,6 +109,7 @@ impl Transaction for OpTxEnvelope {
             Self::Eip1559(tx) => tx.tx().chain_id(),
             Self::Eip7702(tx) => tx.tx().chain_id(),
             Self::Deposit(tx) => tx.chain_id(),
+            Self::Seismic(tx) => tx.tx().chain_id(),
         }
     }
 
@@ -110,6 +120,7 @@ impl Transaction for OpTxEnvelope {
             Self::Eip1559(tx) => tx.tx().nonce(),
             Self::Eip7702(tx) => tx.tx().nonce(),
             Self::Deposit(tx) => tx.nonce(),
+            Self::Seismic(tx) => tx.tx().nonce(),
         }
     }
 
@@ -120,6 +131,7 @@ impl Transaction for OpTxEnvelope {
             Self::Eip1559(tx) => tx.tx().gas_limit(),
             Self::Eip7702(tx) => tx.tx().gas_limit(),
             Self::Deposit(tx) => tx.gas_limit(),
+            Self::Seismic(tx) => tx.tx().gas_limit(),
         }
     }
 
@@ -130,6 +142,7 @@ impl Transaction for OpTxEnvelope {
             Self::Eip1559(tx) => tx.tx().gas_price(),
             Self::Eip7702(tx) => tx.tx().gas_price(),
             Self::Deposit(tx) => tx.gas_price(),
+            Self::Seismic(tx) => tx.tx().gas_price(),
         }
     }
 
@@ -140,6 +153,7 @@ impl Transaction for OpTxEnvelope {
             Self::Eip1559(tx) => tx.tx().max_fee_per_gas(),
             Self::Eip7702(tx) => tx.tx().max_fee_per_gas(),
             Self::Deposit(tx) => tx.max_fee_per_gas(),
+            Self::Seismic(tx) => tx.tx().max_fee_per_gas(),
         }
     }
 
@@ -150,6 +164,7 @@ impl Transaction for OpTxEnvelope {
             Self::Eip1559(tx) => tx.tx().max_priority_fee_per_gas(),
             Self::Eip7702(tx) => tx.tx().max_priority_fee_per_gas(),
             Self::Deposit(tx) => tx.max_priority_fee_per_gas(),
+            Self::Seismic(tx) => tx.tx().max_priority_fee_per_gas(),
         }
     }
 
@@ -160,6 +175,7 @@ impl Transaction for OpTxEnvelope {
             Self::Eip1559(tx) => tx.tx().max_fee_per_blob_gas(),
             Self::Eip7702(tx) => tx.tx().max_fee_per_blob_gas(),
             Self::Deposit(tx) => tx.max_fee_per_blob_gas(),
+            Self::Seismic(tx) => tx.tx().max_fee_per_blob_gas(),
         }
     }
 
@@ -170,6 +186,7 @@ impl Transaction for OpTxEnvelope {
             Self::Eip1559(tx) => tx.tx().priority_fee_or_price(),
             Self::Eip7702(tx) => tx.tx().priority_fee_or_price(),
             Self::Deposit(tx) => tx.priority_fee_or_price(),
+            Self::Seismic(tx) => tx.tx().priority_fee_or_price(),
         }
     }
 
@@ -180,6 +197,7 @@ impl Transaction for OpTxEnvelope {
             Self::Eip1559(tx) => tx.tx().effective_gas_price(base_fee),
             Self::Eip7702(tx) => tx.tx().effective_gas_price(base_fee),
             Self::Deposit(tx) => tx.effective_gas_price(base_fee),
+            Self::Seismic(tx) => tx.tx().effective_gas_price(base_fee),
         }
     }
 
@@ -190,6 +208,7 @@ impl Transaction for OpTxEnvelope {
             Self::Eip1559(tx) => tx.tx().is_dynamic_fee(),
             Self::Eip7702(tx) => tx.tx().is_dynamic_fee(),
             Self::Deposit(tx) => tx.is_dynamic_fee(),
+            Self::Seismic(tx) => tx.tx().is_dynamic_fee(),
         }
     }
 
@@ -200,6 +219,7 @@ impl Transaction for OpTxEnvelope {
             Self::Eip1559(tx) => tx.tx().kind(),
             Self::Eip7702(tx) => tx.tx().kind(),
             Self::Deposit(tx) => tx.kind(),
+            Self::Seismic(tx) => tx.tx().kind(),
         }
     }
 
@@ -210,6 +230,7 @@ impl Transaction for OpTxEnvelope {
             Self::Eip1559(tx) => tx.tx().is_create(),
             Self::Eip7702(tx) => tx.tx().is_create(),
             Self::Deposit(tx) => tx.is_create(),
+            Self::Seismic(tx) => tx.tx().is_create(),
         }
     }
 
@@ -220,6 +241,7 @@ impl Transaction for OpTxEnvelope {
             Self::Eip1559(tx) => tx.tx().to(),
             Self::Eip7702(tx) => tx.tx().to(),
             Self::Deposit(tx) => tx.to(),
+            Self::Seismic(tx) => tx.tx().to(),
         }
     }
 
@@ -230,6 +252,7 @@ impl Transaction for OpTxEnvelope {
             Self::Eip1559(tx) => tx.tx().value(),
             Self::Eip7702(tx) => tx.tx().value(),
             Self::Deposit(tx) => tx.value(),
+            Self::Seismic(tx) => tx.tx().value(),
         }
     }
 
@@ -240,6 +263,7 @@ impl Transaction for OpTxEnvelope {
             Self::Eip1559(tx) => tx.tx().input(),
             Self::Eip7702(tx) => tx.tx().input(),
             Self::Deposit(tx) => tx.input(),
+            Self::Seismic(tx) => tx.tx().input(),
         }
     }
 
@@ -250,6 +274,7 @@ impl Transaction for OpTxEnvelope {
             Self::Eip1559(tx) => tx.tx().access_list(),
             Self::Eip7702(tx) => tx.tx().access_list(),
             Self::Deposit(tx) => tx.access_list(),
+            Self::Seismic(tx) => tx.tx().access_list(),
         }
     }
 
@@ -260,6 +285,7 @@ impl Transaction for OpTxEnvelope {
             Self::Eip1559(tx) => tx.tx().blob_versioned_hashes(),
             Self::Eip7702(tx) => tx.tx().blob_versioned_hashes(),
             Self::Deposit(tx) => tx.blob_versioned_hashes(),
+            Self::Seismic(tx) => tx.tx().blob_versioned_hashes(),
         }
     }
 
@@ -270,6 +296,7 @@ impl Transaction for OpTxEnvelope {
             Self::Eip1559(tx) => tx.tx().authorization_list(),
             Self::Eip7702(tx) => tx.tx().authorization_list(),
             Self::Deposit(tx) => tx.authorization_list(),
+            Self::Seismic(tx) => tx.tx().authorization_list(),
         }
     }
 }
@@ -348,6 +375,7 @@ impl OpTxEnvelope {
             Self::Eip1559(_) => OpTxType::Eip1559,
             Self::Eip7702(_) => OpTxType::Eip7702,
             Self::Deposit(_) => OpTxType::Deposit,
+            Self::Seismic(_) => OpTxType::Seismic,
         }
     }
 
@@ -359,6 +387,7 @@ impl OpTxEnvelope {
             Self::Eip2930(tx) => *tx.hash(),
             Self::Eip7702(tx) => *tx.hash(),
             Self::Deposit(tx) => tx.tx_hash(),
+            Self::Seismic(tx) => *tx.hash(),
         }
     }
 
@@ -370,6 +399,7 @@ impl OpTxEnvelope {
             Self::Eip1559(t) => t.eip2718_encoded_length(),
             Self::Eip7702(t) => t.eip2718_encoded_length(),
             Self::Deposit(t) => t.eip2718_encoded_length(),
+            Self::Seismic(t) => t.eip2718_encoded_length(),
         }
     }
 }
@@ -396,6 +426,7 @@ impl Decodable2718 for OpTxEnvelope {
             OpTxType::Eip2930 => Ok(Self::Eip2930(TxEip2930::rlp_decode_signed(buf)?)),
             OpTxType::Eip1559 => Ok(Self::Eip1559(TxEip1559::rlp_decode_signed(buf)?)),
             OpTxType::Eip7702 => Ok(Self::Eip7702(TxEip7702::rlp_decode_signed(buf)?)),
+            OpTxType::Seismic => Ok(Self::Seismic(TxSeismic::rlp_decode_signed(buf)?)),
             OpTxType::Deposit => Ok(Self::Deposit(TxDeposit::decode(buf)?.seal_slow())),
             OpTxType::Legacy => {
                 Err(alloy_rlp::Error::Custom("type-0 eip2718 transactions are not supported")
@@ -417,6 +448,7 @@ impl Encodable2718 for OpTxEnvelope {
             Self::Eip1559(_) => Some(OpTxType::Eip1559 as u8),
             Self::Eip7702(_) => Some(OpTxType::Eip7702 as u8),
             Self::Deposit(_) => Some(OpTxType::Deposit as u8),
+            Self::Seismic(_) => Some(OpTxType::Seismic as u8),
         }
     }
 
@@ -440,6 +472,9 @@ impl Encodable2718 for OpTxEnvelope {
             Self::Deposit(tx) => {
                 tx.encode_2718(out);
             }
+            Self::Seismic(tx) => {
+                tx.eip2718_encode(out);
+            }
         }
     }
 
@@ -450,6 +485,7 @@ impl Encodable2718 for OpTxEnvelope {
             Self::Eip2930(tx) => *tx.hash(),
             Self::Eip7702(tx) => *tx.hash(),
             Self::Deposit(tx) => tx.seal(),
+            Self::Seismic(tx) => *tx.hash(),
         }
     }
 }
@@ -492,6 +528,8 @@ mod serde_from {
         Eip7702(Signed<TxEip7702>),
         #[serde(rename = "0x7e", alias = "0x7E", serialize_with = "crate::serde_deposit_tx_rpc")]
         Deposit(Sealed<TxDeposit>),
+        #[serde(rename = "0x4a", alias = "0x4A")]
+        Seismic(Signed<TxSeismic>),
     }
 
     impl From<MaybeTaggedTxEnvelope> for OpTxEnvelope {
@@ -511,6 +549,7 @@ mod serde_from {
                 TaggedTxEnvelope::Eip1559(signed) => Self::Eip1559(signed),
                 TaggedTxEnvelope::Eip7702(signed) => Self::Eip7702(signed),
                 TaggedTxEnvelope::Deposit(tx) => Self::Deposit(tx),
+                TaggedTxEnvelope::Seismic(signed) => Self::Seismic(signed),
             }
         }
     }
@@ -523,6 +562,7 @@ mod serde_from {
                 OpTxEnvelope::Eip1559(signed) => Self::Eip1559(signed),
                 OpTxEnvelope::Eip7702(signed) => Self::Eip7702(signed),
                 OpTxEnvelope::Deposit(tx) => Self::Deposit(tx),
+                OpTxEnvelope::Seismic(signed) => Self::Seismic(signed),
             }
         }
     }

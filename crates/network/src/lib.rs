@@ -8,7 +8,7 @@
 
 pub use alloy_network::*;
 
-use alloy_consensus::{TxEnvelope, TxType, TypedTransaction};
+use alloy_consensus::{transaction::EncryptionPublicKey, TxEnvelope, TxType, TypedTransaction};
 use alloy_primitives::{Address, Bytes, ChainId, TxKind, U256};
 use alloy_rpc_types_eth::AccessList;
 use op_alloy_consensus::{OpTxEnvelope, OpTxType, OpTypedTransaction};
@@ -161,6 +161,7 @@ impl TransactionBuilder<Optimism> for OpTransactionRequest {
             TxType::Eip2930 => OpTxType::Eip2930,
             TxType::Eip7702 => OpTxType::Eip7702,
             TxType::Legacy => OpTxType::Legacy,
+            TxType::Seismic => OpTxType::Seismic,
         }
     }
 
@@ -171,6 +172,7 @@ impl TransactionBuilder<Optimism> for OpTransactionRequest {
             TxType::Eip2930 => OpTxType::Eip2930,
             TxType::Eip7702 => OpTxType::Eip7702,
             TxType::Legacy => OpTxType::Legacy,
+            TxType::Seismic => OpTxType::Seismic,
         })
     }
 
@@ -192,6 +194,25 @@ impl TransactionBuilder<Optimism> for OpTransactionRequest {
         wallet: &W,
     ) -> Result<<Optimism as Network>::TxEnvelope, TransactionBuilderError<Optimism>> {
         Ok(wallet.sign_request(self).await?)
+    }
+
+    fn encryption_pubkey(&self) -> Option<&EncryptionPublicKey> {
+        self.as_ref().encryption_pubkey()
+    }
+
+    fn set_encryption_pubkey(
+        &mut self,
+        encryption_pubkey: alloy_consensus::transaction::EncryptionPublicKey,
+    ) {
+        self.as_mut().set_encryption_pubkey(encryption_pubkey);
+    }
+
+    fn message_version(&self) -> Option<u8> {
+        self.as_ref().message_version()
+    }
+
+    fn set_message_version(&mut self, message_version: u8) {
+        self.as_mut().set_message_version(message_version);
     }
 }
 
@@ -218,6 +239,7 @@ impl NetworkWallet<Optimism> for EthereumWallet {
             OpTypedTransaction::Eip2930(tx) => TypedTransaction::Eip2930(tx),
             OpTypedTransaction::Eip1559(tx) => TypedTransaction::Eip1559(tx),
             OpTypedTransaction::Eip7702(tx) => TypedTransaction::Eip7702(tx),
+            OpTypedTransaction::Seismic(tx) => TypedTransaction::Seismic(tx),
             OpTypedTransaction::Deposit(_) => {
                 return Err(alloy_signer::Error::other("not implemented for deposit tx"))
             }
@@ -229,6 +251,7 @@ impl NetworkWallet<Optimism> for EthereumWallet {
             TxEnvelope::Eip2930(tx) => OpTxEnvelope::Eip2930(tx),
             TxEnvelope::Eip7702(tx) => OpTxEnvelope::Eip7702(tx),
             TxEnvelope::Legacy(tx) => OpTxEnvelope::Legacy(tx),
+            TxEnvelope::Seismic(tx) => OpTxEnvelope::Seismic(tx),
             _ => unreachable!(),
         })
     }

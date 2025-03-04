@@ -45,6 +45,11 @@ pub enum OpReceiptEnvelope<T = Log> {
     /// [deposit]: https://specs.optimism.io/protocol/deposits.html
     #[cfg_attr(feature = "serde", serde(rename = "0x7e", alias = "0x7E"))]
     Deposit(ReceiptWithBloom<OpDepositReceipt<T>>),
+    /// Receipt envelope with type flag 74, containing a [seismic] receipt.
+    ///
+    /// [seismic]: https://github.com/SeismicSystems/seismic-alloy/blob/main/crates/consensus/src/transaction/tx_type.rs#L43
+    #[cfg_attr(feature = "serde", serde(rename = "0x4a", alias = "0x4A"))]
+    Seismic(ReceiptWithBloom<Receipt<T>>),
 }
 
 impl OpReceiptEnvelope<Log> {
@@ -85,6 +90,9 @@ impl OpReceiptEnvelope<Log> {
                 };
                 Self::Deposit(inner)
             }
+            OpTxType::Seismic => {
+                Self::Seismic(ReceiptWithBloom { receipt: inner_receipt, logs_bloom })
+            }
         }
     }
 }
@@ -98,6 +106,7 @@ impl<T> OpReceiptEnvelope<T> {
             Self::Eip1559(_) => OpTxType::Eip1559,
             Self::Eip7702(_) => OpTxType::Eip7702,
             Self::Deposit(_) => OpTxType::Deposit,
+            Self::Seismic(_) => OpTxType::Seismic,
         }
     }
 
@@ -129,6 +138,7 @@ impl<T> OpReceiptEnvelope<T> {
             Self::Eip1559(t) => &t.logs_bloom,
             Self::Eip7702(t) => &t.logs_bloom,
             Self::Deposit(t) => &t.logs_bloom,
+            Self::Seismic(t) => &t.logs_bloom,
         }
     }
 
@@ -162,9 +172,11 @@ impl<T> OpReceiptEnvelope<T> {
     /// receipt types may be added.
     pub const fn as_receipt(&self) -> Option<&Receipt<T>> {
         match self {
-            Self::Legacy(t) | Self::Eip2930(t) | Self::Eip1559(t) | Self::Eip7702(t) => {
-                Some(&t.receipt)
-            }
+            Self::Legacy(t)
+            | Self::Eip2930(t)
+            | Self::Eip1559(t)
+            | Self::Eip7702(t)
+            | Self::Seismic(t) => Some(&t.receipt),
             Self::Deposit(t) => Some(&t.receipt.inner),
         }
     }
@@ -179,6 +191,7 @@ impl OpReceiptEnvelope {
             Self::Eip1559(t) => t.length(),
             Self::Eip7702(t) => t.length(),
             Self::Deposit(t) => t.length(),
+            Self::Seismic(t) => t.length(),
         }
     }
 
@@ -255,6 +268,7 @@ impl Encodable2718 for OpReceiptEnvelope {
             Self::Eip1559(_) => Some(OpTxType::Eip1559 as u8),
             Self::Eip7702(_) => Some(OpTxType::Eip7702 as u8),
             Self::Deposit(_) => Some(OpTxType::Deposit as u8),
+            Self::Seismic(_) => Some(OpTxType::Seismic as u8),
         }
     }
 
@@ -269,9 +283,11 @@ impl Encodable2718 for OpReceiptEnvelope {
         }
         match self {
             Self::Deposit(t) => t.encode(out),
-            Self::Legacy(t) | Self::Eip2930(t) | Self::Eip1559(t) | Self::Eip7702(t) => {
-                t.encode(out)
-            }
+            Self::Legacy(t)
+            | Self::Eip2930(t)
+            | Self::Eip1559(t)
+            | Self::Eip7702(t)
+            | Self::Seismic(t) => t.encode(out),
         }
     }
 }
@@ -287,6 +303,7 @@ impl Decodable2718 for OpReceiptEnvelope {
             OpTxType::Eip7702 => Ok(Self::Eip7702(Decodable::decode(buf)?)),
             OpTxType::Eip2930 => Ok(Self::Eip2930(Decodable::decode(buf)?)),
             OpTxType::Deposit => Ok(Self::Deposit(Decodable::decode(buf)?)),
+            OpTxType::Seismic => Ok(Self::Seismic(Decodable::decode(buf)?)),
         }
     }
 
@@ -305,6 +322,7 @@ where
             0 => Ok(Self::Legacy(ReceiptWithBloom::arbitrary(u)?)),
             1 => Ok(Self::Eip2930(ReceiptWithBloom::arbitrary(u)?)),
             2 => Ok(Self::Eip1559(ReceiptWithBloom::arbitrary(u)?)),
+            3 => Ok(Self::Seismic(ReceiptWithBloom::arbitrary(u)?)),
             _ => Ok(Self::Deposit(OpDepositReceiptWithBloom::arbitrary(u)?)),
         }
     }

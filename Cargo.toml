@@ -51,8 +51,8 @@ alloy-eips = { version = "0.8", default-features = false }
 alloy-serde = { version = "0.8", default-features = false }
 alloy-signer = { version = "0.8", default-features = false }
 alloy-network = { version = "0.8", default-features = false }
-alloy-provider = { version = "0.8", default-features = false }
-alloy-transport = { version = "0.8", default-features = false }
+alloy-provider = { version = "0.8"}
+alloy-transport = { version = "0.8"}
 alloy-consensus = { version = "0.8", default-features = false }
 alloy-rpc-types-eth = { version = "0.8", default-features = false }
 alloy-rpc-types-engine = { version = "0.8", default-features = false }
@@ -62,8 +62,9 @@ alloy-network-primitives = { version = "0.8", default-features = false }
 alloy-rlp = { version = "0.3", default-features = false }
 
 # Alloy Core
-alloy-sol-types = { version = "0.8.12", default-features = false }
-alloy-primitives = { version = "0.8.12", default-features = false }
+alloy-sol-types = { version = "0.8.12"}
+alloy-primitives = { version = "0.8.12"}
+alloy-dyn-abi = { version = "0.8.15"}
 
 # Revm
 revm = "18.0.0"
@@ -136,3 +137,7 @@ alloy-serde = { git = "https://github.com/SeismicSystems/seismic-alloy.git", rev
 alloy-signer = { git = "https://github.com/SeismicSystems/seismic-alloy.git", rev = "15971ef" }
 alloy-provider = { git = "https://github.com/SeismicSystems/seismic-alloy.git", rev = "15971ef" }
 alloy-transport = { git = "https://github.com/SeismicSystems/seismic-alloy.git", rev = "15971ef" }
+
+alloy-dyn-abi = { git = "https://github.com/SeismicSystems/seismic-alloy-core.git", rev = "6e1c0e9" }
+alloy-primitives = { git = "https://github.com/SeismicSystems/seismic-alloy-core.git", rev = "6e1c0e9" }
+alloy-sol-types = { git = "https://github.com/SeismicSystems/seismic-alloy-core.git", rev = "6e1c0e9" }

@@ -116,6 +116,7 @@ impl OpTransactionRequest {
                 }))
             }
             TypedTransaction::Eip7702(tx) => Ok(OpTypedTransaction::Eip7702(tx)),
+            TypedTransaction::Seismic(tx) => Ok(OpTypedTransaction::Seismic(tx)),
         }
     }
 }
@@ -174,6 +175,7 @@ impl From<OpTypedTransaction> for OpTransactionRequest {
             OpTypedTransaction::Eip2930(tx) => Self(tx.into()),
             OpTypedTransaction::Eip1559(tx) => Self(tx.into()),
             OpTypedTransaction::Eip7702(tx) => Self(tx.into()),
+            OpTypedTransaction::Seismic(tx) => Self(tx.into()),
             OpTypedTransaction::Deposit(tx) => tx.into(),
         }
     }
@@ -186,6 +188,7 @@ impl From<OpTxEnvelope> for OpTransactionRequest {
             OpTxEnvelope::Eip1559(tx) => tx.into(),
             OpTxEnvelope::Eip7702(tx) => tx.into(),
             OpTxEnvelope::Deposit(tx) => tx.into(),
+            OpTxEnvelope::Seismic(tx) => tx.into(),
             _ => Default::default(),
         }
     }

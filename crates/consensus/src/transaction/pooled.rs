@@ -4,7 +4,7 @@
 use crate::{OpTxEnvelope, OpTxType};
 use alloy_consensus::{
     transaction::{RlpEcdsaTx, TxEip1559, TxEip2930, TxLegacy},
-    SignableTransaction, Signed, Transaction, TxEip7702, TxEnvelope, Typed2718,
+    SignableTransaction, Signed, Transaction, TxEip7702, TxEnvelope, TxSeismic, Typed2718,
 };
 use alloy_eips::{
     eip2718::{Decodable2718, Eip2718Error, Eip2718Result, Encodable2718},
@@ -16,6 +16,8 @@ use alloy_primitives::{
 };
 use alloy_rlp::{Decodable, Encodable, Header};
 use core::hash::{Hash, Hasher};
+
+use super::tx_type;
 
 /// All possible transactions that can be included in a response to `GetPooledTransactions`.
 /// A response to `GetPooledTransactions`. This can include a typed signed transaction, but cannot
@@ -35,6 +37,8 @@ pub enum OpPooledTransaction {
     Eip1559(Signed<TxEip1559>),
     /// A [`TxEip7702`] transaction tagged with type 4.
     Eip7702(Signed<TxEip7702>),
+    /// A [`TxSeismic`] transaction tagged with type 74.
+    Seismic(Signed<TxSeismic>),
 }
 
 impl OpPooledTransaction {
@@ -46,6 +50,7 @@ impl OpPooledTransaction {
             Self::Eip2930(tx) => tx.signature_hash(),
             Self::Eip1559(tx) => tx.signature_hash(),
             Self::Eip7702(tx) => tx.signature_hash(),
+            Self::Seismic(tx) => tx.signature_hash(),
         }
     }
 
@@ -56,6 +61,7 @@ impl OpPooledTransaction {
             Self::Eip2930(tx) => tx.hash(),
             Self::Eip1559(tx) => tx.hash(),
             Self::Eip7702(tx) => tx.hash(),
+            Self::Seismic(tx) => tx.hash(),
         }
     }
 
@@ -66,6 +72,7 @@ impl OpPooledTransaction {
             Self::Eip2930(tx) => tx.signature(),
             Self::Eip1559(tx) => tx.signature(),
             Self::Eip7702(tx) => tx.signature(),
+            Self::Seismic(tx) => tx.signature(),
         }
     }
 
@@ -90,6 +97,7 @@ impl OpPooledTransaction {
             Self::Eip2930(tx) => tx.recover_signer(),
             Self::Eip1559(tx) => tx.recover_signer(),
             Self::Eip7702(tx) => tx.recover_signer(),
+            Self::Seismic(tx) => tx.recover_signer(),
         }
     }
 
@@ -101,6 +109,7 @@ impl OpPooledTransaction {
             Self::Eip2930(tx) => tx.tx().encode_for_signing(out),
             Self::Eip1559(tx) => tx.tx().encode_for_signing(out),
             Self::Eip7702(tx) => tx.tx().encode_for_signing(out),
+            Self::Seismic(tx) => tx.tx().encode_for_signing(out),
         }
     }
 
@@ -111,6 +120,7 @@ impl OpPooledTransaction {
             Self::Eip2930(tx) => tx.into(),
             Self::Eip1559(tx) => tx.into(),
             Self::Eip7702(tx) => tx.into(),
+            Self::Seismic(tx) => tx.into(),
         }
     }
 
@@ -121,6 +131,7 @@ impl OpPooledTransaction {
             Self::Eip2930(tx) => tx.into(),
             Self::Eip1559(tx) => tx.into(),
             Self::Eip7702(tx) => tx.into(),
+            Self::Seismic(tx) => tx.into(),
         }
     }
 
@@ -152,6 +163,14 @@ impl OpPooledTransaction {
     pub const fn as_eip7702(&self) -> Option<&TxEip7702> {
         match self {
             Self::Eip7702(tx) => Some(tx.tx()),
+            _ => None,
+        }
+    }
+
+    /// Returns the [`TxSeismic`] variant if the transaction is a seismic transaction.
+    pub const fn as_seismic(&self) -> Option<&TxSeismic> {
+        match self {
+            Self::Seismic(tx) => Some(tx.tx()),
             _ => None,
         }
     }
@@ -221,6 +240,7 @@ impl Encodable2718 for OpPooledTransaction {
             Self::Eip2930(_) => Some(0x01),
             Self::Eip1559(_) => Some(0x02),
             Self::Eip7702(_) => Some(0x04),
+            Self::Seismic(_) => Some(0x4A),
         }
     }
 
@@ -230,6 +250,7 @@ impl Encodable2718 for OpPooledTransaction {
             Self::Eip2930(tx) => tx.eip2718_encoded_length(),
             Self::Eip1559(tx) => tx.eip2718_encoded_length(),
             Self::Eip7702(tx) => tx.eip2718_encoded_length(),
+            Self::Seismic(tx) => tx.eip2718_encoded_length(),
         }
     }
 
@@ -239,6 +260,7 @@ impl Encodable2718 for OpPooledTransaction {
             Self::Eip2930(tx) => tx.eip2718_encode(out),
             Self::Eip1559(tx) => tx.eip2718_encode(out),
             Self::Eip7702(tx) => tx.eip2718_encode(out),
+            Self::Seismic(tx) => tx.eip2718_encode(out),
         }
     }
 
@@ -255,6 +277,7 @@ impl Decodable2718 for OpPooledTransaction {
             OpTxType::Eip7702 => Ok(TxEip7702::rlp_decode_signed(buf)?.into()),
             OpTxType::Legacy => Err(Eip2718Error::UnexpectedType(OpTxType::Legacy.into())),
             OpTxType::Deposit => Err(Eip2718Error::UnexpectedType(OpTxType::Deposit.into())),
+            OpTxType::Seismic => Err(Eip2718Error::UnexpectedType(OpTxType::Seismic.into())),
         }
     }
 
@@ -270,6 +293,7 @@ impl Transaction for OpPooledTransaction {
             Self::Eip2930(tx) => tx.tx().chain_id(),
             Self::Eip1559(tx) => tx.tx().chain_id(),
             Self::Eip7702(tx) => tx.tx().chain_id(),
+            Self::Seismic(tx) => tx.tx().chain_id(),
         }
     }
 
@@ -279,6 +303,7 @@ impl Transaction for OpPooledTransaction {
             Self::Eip2930(tx) => tx.tx().nonce(),
             Self::Eip1559(tx) => tx.tx().nonce(),
             Self::Eip7702(tx) => tx.tx().nonce(),
+            Self::Seismic(tx) => tx.tx().nonce(),
         }
     }
 
@@ -288,6 +313,7 @@ impl Transaction for OpPooledTransaction {
             Self::Eip2930(tx) => tx.tx().gas_limit(),
             Self::Eip1559(tx) => tx.tx().gas_limit(),
             Self::Eip7702(tx) => tx.tx().gas_limit(),
+            Self::Seismic(tx) => tx.tx().gas_limit(),
         }
     }
 
@@ -297,6 +323,7 @@ impl Transaction for OpPooledTransaction {
             Self::Eip2930(tx) => tx.tx().gas_price(),
             Self::Eip1559(tx) => tx.tx().gas_price(),
             Self::Eip7702(tx) => tx.tx().gas_price(),
+            Self::Seismic(tx) => tx.tx().gas_price(),
         }
     }
 
@@ -306,6 +333,7 @@ impl Transaction for OpPooledTransaction {
             Self::Eip2930(tx) => tx.tx().max_fee_per_gas(),
             Self::Eip1559(tx) => tx.tx().max_fee_per_gas(),
             Self::Eip7702(tx) => tx.tx().max_fee_per_gas(),
+            Self::Seismic(tx) => tx.tx().max_fee_per_gas(),
         }
     }
 
@@ -315,6 +343,7 @@ impl Transaction for OpPooledTransaction {
             Self::Eip2930(tx) => tx.tx().max_priority_fee_per_gas(),
             Self::Eip1559(tx) => tx.tx().max_priority_fee_per_gas(),
             Self::Eip7702(tx) => tx.tx().max_priority_fee_per_gas(),
+            Self::Seismic(tx) => tx.tx().max_priority_fee_per_gas(),
         }
     }
 
@@ -324,6 +353,7 @@ impl Transaction for OpPooledTransaction {
             Self::Eip2930(tx) => tx.tx().max_fee_per_blob_gas(),
             Self::Eip1559(tx) => tx.tx().max_fee_per_blob_gas(),
             Self::Eip7702(tx) => tx.tx().max_fee_per_blob_gas(),
+            Self::Seismic(tx) => tx.tx().max_fee_per_blob_gas(),
         }
     }
 
@@ -333,6 +363,7 @@ impl Transaction for OpPooledTransaction {
             Self::Eip2930(tx) => tx.tx().priority_fee_or_price(),
             Self::Eip1559(tx) => tx.tx().priority_fee_or_price(),
             Self::Eip7702(tx) => tx.tx().priority_fee_or_price(),
+            Self::Seismic(tx) => tx.tx().priority_fee_or_price(),
         }
     }
 
@@ -342,6 +373,7 @@ impl Transaction for OpPooledTransaction {
             Self::Eip2930(tx) => tx.tx().effective_gas_price(base_fee),
             Self::Eip1559(tx) => tx.tx().effective_gas_price(base_fee),
             Self::Eip7702(tx) => tx.tx().effective_gas_price(base_fee),
+            Self::Seismic(tx) => tx.tx().effective_gas_price(base_fee),
         }
     }
 
@@ -351,6 +383,7 @@ impl Transaction for OpPooledTransaction {
             Self::Eip2930(tx) => tx.tx().is_dynamic_fee(),
             Self::Eip1559(tx) => tx.tx().is_dynamic_fee(),
             Self::Eip7702(tx) => tx.tx().is_dynamic_fee(),
+            Self::Seismic(tx) => tx.tx().is_dynamic_fee(),
         }
     }
 
@@ -360,6 +393,7 @@ impl Transaction for OpPooledTransaction {
             Self::Eip2930(tx) => tx.tx().kind(),
             Self::Eip1559(tx) => tx.tx().kind(),
             Self::Eip7702(tx) => tx.tx().kind(),
+            Self::Seismic(tx) => tx.tx().kind(),
         }
     }
 
@@ -369,6 +403,7 @@ impl Transaction for OpPooledTransaction {
             Self::Eip2930(tx) => tx.tx().is_create(),
             Self::Eip1559(tx) => tx.tx().is_create(),
             Self::Eip7702(tx) => tx.tx().is_create(),
+            Self::Seismic(tx) => tx.tx().is_create(),
         }
     }
 
@@ -378,6 +413,7 @@ impl Transaction for OpPooledTransaction {
             Self::Eip2930(tx) => tx.tx().value(),
             Self::Eip1559(tx) => tx.tx().value(),
             Self::Eip7702(tx) => tx.tx().value(),
+            Self::Seismic(tx) => tx.tx().value(),
         }
     }
 
@@ -387,6 +423,7 @@ impl Transaction for OpPooledTransaction {
             Self::Eip2930(tx) => tx.tx().input(),
             Self::Eip1559(tx) => tx.tx().input(),
             Self::Eip7702(tx) => tx.tx().input(),
+            Self::Seismic(tx) => tx.tx().input(),
         }
     }
 
@@ -396,6 +433,7 @@ impl Transaction for OpPooledTransaction {
             Self::Eip2930(tx) => tx.tx().access_list(),
             Self::Eip1559(tx) => tx.tx().access_list(),
             Self::Eip7702(tx) => tx.tx().access_list(),
+            Self::Seismic(tx) => tx.tx().access_list(),
         }
     }
 
@@ -405,6 +443,7 @@ impl Transaction for OpPooledTransaction {
             Self::Eip2930(tx) => tx.tx().blob_versioned_hashes(),
             Self::Eip1559(tx) => tx.tx().blob_versioned_hashes(),
             Self::Eip7702(tx) => tx.tx().blob_versioned_hashes(),
+            Self::Seismic(tx) => tx.tx().blob_versioned_hashes(),
         }
     }
 
@@ -414,6 +453,7 @@ impl Transaction for OpPooledTransaction {
             Self::Eip2930(tx) => tx.tx().authorization_list(),
             Self::Eip1559(tx) => tx.tx().authorization_list(),
             Self::Eip7702(tx) => tx.tx().authorization_list(),
+            Self::Seismic(tx) => tx.tx().authorization_list(),
         }
     }
 }
@@ -425,6 +465,7 @@ impl Typed2718 for OpPooledTransaction {
             Self::Eip2930(tx) => tx.tx().ty(),
             Self::Eip1559(tx) => tx.tx().ty(),
             Self::Eip7702(tx) => tx.tx().ty(),
+            Self::Seismic(tx) => tx.tx().ty(),
         }
     }
 }

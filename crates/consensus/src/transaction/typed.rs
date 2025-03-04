@@ -1,5 +1,7 @@
 use crate::{OpTxEnvelope, OpTxType, TxDeposit};
-use alloy_consensus::{Transaction, TxEip1559, TxEip2930, TxEip7702, TxLegacy, Typed2718};
+use alloy_consensus::{
+    Transaction, TxEip1559, TxEip2930, TxEip7702, TxLegacy, TxSeismic, Typed2718,
+};
 use alloy_eips::eip2930::AccessList;
 use alloy_primitives::{Address, Bytes, TxKind};
 
@@ -32,6 +34,8 @@ pub enum OpTypedTransaction {
     Eip7702(TxEip7702),
     /// Optimism deposit transaction
     Deposit(TxDeposit),
+    /// Seismic transaction
+    Seismic(TxSeismic),
 }
 
 impl From<TxLegacy> for OpTypedTransaction {
@@ -65,6 +69,7 @@ impl From<OpTxEnvelope> for OpTypedTransaction {
             OpTxEnvelope::Eip2930(tx) => Self::Eip2930(tx.strip_signature()),
             OpTxEnvelope::Eip1559(tx) => Self::Eip1559(tx.strip_signature()),
             OpTxEnvelope::Eip7702(tx) => Self::Eip7702(tx.strip_signature()),
+            OpTxEnvelope::Seismic(tx) => Self::Seismic(tx.strip_signature()),
             OpTxEnvelope::Deposit(tx) => Self::Deposit(tx.into_inner()),
         }
     }
@@ -79,6 +84,7 @@ impl OpTypedTransaction {
             Self::Eip1559(_) => OpTxType::Eip1559,
             Self::Eip7702(_) => OpTxType::Eip7702,
             Self::Deposit(_) => OpTxType::Deposit,
+            Self::Seismic(_) => OpTxType::Seismic,
         }
     }
 
@@ -113,6 +119,14 @@ impl OpTypedTransaction {
             _ => None,
         }
     }
+
+    /// Return the inner seismic transaction if it exists.
+    pub const fn seismic(&self) -> Option<&TxSeismic> {
+        match self {
+            Self::Seismic(tx) => Some(tx),
+            _ => None,
+        }
+    }
 }
 
 impl Typed2718 for OpTypedTransaction {
@@ -123,6 +137,7 @@ impl Typed2718 for OpTypedTransaction {
             Self::Eip1559(_) => OpTxType::Eip1559 as u8,
             Self::Eip7702(_) => OpTxType::Eip7702 as u8,
             Self::Deposit(_) => OpTxType::Deposit as u8,
+            Self::Seismic(_) => OpTxType::Seismic as u8,
         }
     }
 }
@@ -135,6 +150,7 @@ impl Transaction for OpTypedTransaction {
             Self::Eip1559(tx) => tx.chain_id(),
             Self::Eip7702(tx) => tx.chain_id(),
             Self::Deposit(tx) => tx.chain_id(),
+            Self::Seismic(tx) => tx.chain_id(),
         }
     }
 
@@ -145,6 +161,7 @@ impl Transaction for OpTypedTransaction {
             Self::Eip1559(tx) => tx.nonce(),
             Self::Eip7702(tx) => tx.nonce(),
             Self::Deposit(tx) => tx.nonce(),
+            Self::Seismic(tx) => tx.nonce(),
         }
     }
 
@@ -155,6 +172,7 @@ impl Transaction for OpTypedTransaction {
             Self::Eip1559(tx) => tx.gas_limit(),
             Self::Eip7702(tx) => tx.gas_limit(),
             Self::Deposit(tx) => tx.gas_limit(),
+            Self::Seismic(tx) => tx.gas_limit(),
         }
     }
 
@@ -165,6 +183,7 @@ impl Transaction for OpTypedTransaction {
             Self::Eip1559(tx) => tx.gas_price(),
             Self::Eip7702(tx) => tx.gas_price(),
             Self::Deposit(tx) => tx.gas_price(),
+            Self::Seismic(tx) => tx.gas_price(),
         }
     }
 
@@ -175,6 +194,7 @@ impl Transaction for OpTypedTransaction {
             Self::Eip1559(tx) => tx.max_fee_per_gas(),
             Self::Eip7702(tx) => tx.max_fee_per_gas(),
             Self::Deposit(tx) => tx.max_fee_per_gas(),
+            Self::Seismic(tx) => tx.max_fee_per_gas(),
         }
     }
 
@@ -185,6 +205,7 @@ impl Transaction for OpTypedTransaction {
             Self::Eip1559(tx) => tx.max_priority_fee_per_gas(),
             Self::Eip7702(tx) => tx.max_priority_fee_per_gas(),
             Self::Deposit(tx) => tx.max_priority_fee_per_gas(),
+            Self::Seismic(tx) => tx.max_priority_fee_per_gas(),
         }
     }
 
@@ -195,6 +216,7 @@ impl Transaction for OpTypedTransaction {
             Self::Eip1559(tx) => tx.max_fee_per_blob_gas(),
             Self::Eip7702(tx) => tx.max_fee_per_blob_gas(),
             Self::Deposit(tx) => tx.max_fee_per_blob_gas(),
+            Self::Seismic(tx) => tx.max_fee_per_blob_gas(),
         }
     }
 
@@ -205,6 +227,7 @@ impl Transaction for OpTypedTransaction {
             Self::Eip1559(tx) => tx.priority_fee_or_price(),
             Self::Eip7702(tx) => tx.priority_fee_or_price(),
             Self::Deposit(tx) => tx.priority_fee_or_price(),
+            Self::Seismic(tx) => tx.priority_fee_or_price(),
         }
     }
 
@@ -215,6 +238,7 @@ impl Transaction for OpTypedTransaction {
             Self::Eip1559(tx) => tx.effective_gas_price(base_fee),
             Self::Eip7702(tx) => tx.effective_gas_price(base_fee),
             Self::Deposit(tx) => tx.effective_gas_price(base_fee),
+            Self::Seismic(tx) => tx.effective_gas_price(base_fee),
         }
     }
 
@@ -225,6 +249,7 @@ impl Transaction for OpTypedTransaction {
             Self::Eip1559(tx) => tx.is_dynamic_fee(),
             Self::Eip7702(tx) => tx.is_dynamic_fee(),
             Self::Deposit(tx) => tx.is_dynamic_fee(),
+            Self::Seismic(tx) => tx.is_dynamic_fee(),
         }
     }
 
@@ -235,6 +260,7 @@ impl Transaction for OpTypedTransaction {
             Self::Eip1559(tx) => tx.kind(),
             Self::Eip7702(tx) => tx.kind(),
             Self::Deposit(tx) => tx.kind(),
+            Self::Seismic(tx) => tx.kind(),
         }
     }
 
@@ -245,6 +271,7 @@ impl Transaction for OpTypedTransaction {
             Self::Eip1559(tx) => tx.is_create(),
             Self::Eip7702(tx) => tx.is_create(),
             Self::Deposit(tx) => tx.is_create(),
+            Self::Seismic(tx) => tx.is_create(),
         }
     }
 
@@ -255,6 +282,7 @@ impl Transaction for OpTypedTransaction {
             Self::Eip1559(tx) => tx.to(),
             Self::Eip7702(tx) => tx.to(),
             Self::Deposit(tx) => tx.to(),
+            Self::Seismic(tx) => tx.to(),
         }
     }
 
@@ -265,6 +293,7 @@ impl Transaction for OpTypedTransaction {
             Self::Eip1559(tx) => tx.value(),
             Self::Eip7702(tx) => tx.value(),
             Self::Deposit(tx) => tx.value(),
+            Self::Seismic(tx) => tx.value(),
         }
     }
 
@@ -275,6 +304,7 @@ impl Transaction for OpTypedTransaction {
             Self::Eip1559(tx) => tx.input(),
             Self::Eip7702(tx) => tx.input(),
             Self::Deposit(tx) => tx.input(),
+            Self::Seismic(tx) => tx.input(),
         }
     }
 
@@ -285,6 +315,7 @@ impl Transaction for OpTypedTransaction {
             Self::Eip1559(tx) => tx.access_list(),
             Self::Eip7702(tx) => tx.access_list(),
             Self::Deposit(tx) => tx.access_list(),
+            Self::Seismic(tx) => tx.access_list(),
         }
     }
 
@@ -295,6 +326,7 @@ impl Transaction for OpTypedTransaction {
             Self::Eip1559(tx) => tx.blob_versioned_hashes(),
             Self::Eip7702(tx) => tx.blob_versioned_hashes(),
             Self::Deposit(tx) => tx.blob_versioned_hashes(),
+            Self::Seismic(tx) => tx.blob_versioned_hashes(),
         }
     }
 
@@ -305,6 +337,7 @@ impl Transaction for OpTypedTransaction {
             Self::Eip1559(tx) => tx.authorization_list(),
             Self::Eip7702(tx) => tx.authorization_list(),
             Self::Deposit(tx) => tx.authorization_list(),
+            Self::Seismic(tx) => tx.authorization_list(),
         }
     }
 }
@@ -349,6 +382,9 @@ mod serde_from {
         /// Deposit transaction
         #[serde(rename = "0x7e", alias = "0x7E", serialize_with = "crate::serde_deposit_tx_rpc")]
         Deposit(TxDeposit),
+        /// Seismic transaction
+        #[serde(rename = "0x4a", alias = "0x4A")]
+        Seismic(TxSeismic),
     }
 
     impl From<MaybeTaggedTypedTransaction> for OpTypedTransaction {
@@ -368,6 +404,7 @@ mod serde_from {
                 TaggedTypedTransaction::Eip1559(signed) => Self::Eip1559(signed),
                 TaggedTypedTransaction::Eip7702(signed) => Self::Eip7702(signed),
                 TaggedTypedTransaction::Deposit(tx) => Self::Deposit(tx),
+                TaggedTypedTransaction::Seismic(tx) => Self::Seismic(tx),
             }
         }
     }
@@ -380,6 +417,7 @@ mod serde_from {
                 OpTypedTransaction::Eip1559(signed) => Self::Eip1559(signed),
                 OpTypedTransaction::Eip7702(signed) => Self::Eip7702(signed),
                 OpTypedTransaction::Deposit(tx) => Self::Deposit(tx),
+                OpTypedTransaction::Seismic(tx) => Self::Seismic(tx),
             }
         }
     }
